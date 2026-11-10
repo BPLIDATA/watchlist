@@ -109,7 +109,30 @@ $("bSave").onclick=()=>{
 $("bDel").onclick=()=>{st.items.splice(edit,1);save();render();connectWS();$("dlg").close()};
 $("rateBtn").onclick=()=>{$("fRate").value=st.rate;$("fKey").value=st.key;$("rdlg").showModal()};
 $("rCancel").onclick=()=>$("rdlg").close();
-$("rSave").onclick=()=>{const v=parseFloat($("fRate").value);if(v>0)st.rate=v;st.key=$("fKey").value.trim();save();render();refresh();connectWS();$("rdlg").close()};
+async function resolveKey(raw){
+  const c=raw.match(/[a-z0-9]{20}/gi)||[raw];const msgs=[];
+  for(const k of c){
+    try{
+      const r=await fetch("https://finnhub.io/api/v1/quote?symbol=AAPL&token="+encodeURIComponent(k));
+      const t=await r.text();let j={};try{j=JSON.parse(t)}catch(e){}
+      if(r.ok&&j.c)return{key:k,msg:""};
+      msgs.push(k.slice(0,5)+"…→ "+r.status+" "+t.slice(0,60));
+    }catch(e){msgs.push(k.slice(0,5)+"…→ เชื่อมต่อไม่ได้ ("+e.message+")")}
+  }
+  return{key:"",msg:msgs.join(" | ")};
+}
+$("rSave").onclick=async()=>{
+  const v=parseFloat($("fRate").value);if(v>0)st.rate=v;
+  const raw=$("fKey").value.trim();$("rdlg").close();render();
+  if(!raw){st.key=""}
+  else if(raw!==st.key){
+    $("stat").textContent="กำลังตรวจสอบคีย์...";
+    const r=await resolveKey(raw);
+    if(!r.key){st.key="";save();$("stat").textContent="⚠ คีย์ใช้ไม่ได้: "+r.msg;return}
+    st.key=r.key;
+  }
+  save();refresh();connectWS();
+};
 
 // home-screen icon + manifest
 try{
@@ -122,14 +145,14 @@ try{
 render();
 // ---- live data ----
 async function getJSON(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json()}
-let rateT=0;
+let rateT=0,lastErr="";
 async function refresh(){
   if(!st.key){$("stat").textContent="ใส่ API Key ในตั้งค่า (แตะ ฿)";return}
   try{
     if(Date.now()-rateT>6e5){try{const j=await getJSON("https://open.er-api.com/v6/latest/USD");if(j.rates&&j.rates.THB){st.rate=j.rates.THB;rateT=Date.now()}}catch(e){}}
-    const res=await Promise.all(st.items.map(it=>getJSON("https://finnhub.io/api/v1/quote?symbol="+encodeURIComponent(it.s)+"&token="+encodeURIComponent(st.key)).catch(()=>null)));
+    const res=await Promise.all(st.items.map(it=>getJSON("https://finnhub.io/api/v1/quote?symbol="+encodeURIComponent(it.s)+"&token="+encodeURIComponent(st.key)).catch(e=>{lastErr=e.message;return null})));
     let ok=0;res.forEach((q,i)=>{if(q&&q.c){ok++;st.items[i].p=q.c;st.items[i].c=q.d||0;st.items[i].pc=q.pc}});
-    if(!ok){$("stat").textContent="⚠ API Key ใช้ไม่ได้ — ตรวจสอบคีย์ในตั้งค่า";return}
+    if(!ok){$("stat").textContent="⚠ ดึงราคาไม่สำเร็จ (รหัส "+lastErr+")";return}
     last=new Date();save();render();
     if(!ws||ws.readyState!==1)$("stat").textContent="● อัปเดต "+last.toLocaleTimeString("th-TH");
   }catch(e){$("stat").textContent="เชื่อมต่อไม่ได้ · ลองใหม่..."}
