@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Watchlist ฿</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Watchlist ฿">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" id="icon" href="">
+<style>
+:root{--bg:#fff;--fg:#111;--mut:#777;--line:#e6e6e6;--up:#1f8a5b;--dn:#c0392b;--chip:#f1f1f1;--card:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111;--fg:#f2f2f2;--mut:#999;--line:#2a2a2a;--up:#3ecf8e;--dn:#ff6b5b;--chip:#222;--card:#1b1b1b}}
+:root[data-theme="dark"]{--bg:#111;--fg:#f2f2f2;--mut:#999;--line:#2a2a2a;--up:#3ecf8e;--dn:#ff6b5b;--chip:#222;--card:#1b1b1b}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Sukhumvit Set","Noto Sans Thai",system-ui,sans-serif;max-width:520px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);border-bottom:1px solid var(--line);z-index:5}
+h1{font-size:18px;margin:0}
+.rate{background:var(--chip);border-radius:20px;padding:8px 14px;font-size:14px;border:0;color:var(--fg)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.note{font-size:12px;font-weight:700;color:var(--mut);padding:10px 18px 0}
+.sym{font-size:20px;font-weight:600}.nm{font-size:14px;color:var(--mut);max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r{text-align:right}.px{font-size:20px;font-weight:600}.ch{font-size:14px}
+.up{color:var(--up)}.dn{color:var(--dn)}.fl{color:var(--fg)}
+.usd{font-size:11px;color:var(--mut)}
+.add{display:block;margin:24px auto;background:var(--chip);color:var(--fg);border:0;border-radius:28px;padding:14px 24px;font-size:16px;font-weight:600}
+dialog{border:0;border-radius:16px;background:var(--card);color:var(--fg);width:90%;max-width:400px;padding:18px}
+dialog::backdrop{background:#0008}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:16px}
+.btns{display:flex;gap:8px;margin-top:16px}.btns button{flex:1;padding:12px;border-radius:10px;border:0;font-size:15px;background:var(--chip);color:var(--fg)}
+.btns .pri{background:#2962ff;color:#fff}.btns .del{color:var(--dn)}
+.foot{font-size:12px;color:var(--mut);text-align:center;padding:0 18px 40px}
+</style>
+</head>
+<body>
+<header><div><h1>📈 Watchlist (฿ บาท)</h1><div class="usd" id="stat">ยังไม่ได้ใส่ API Key</div></div><button class="rate" id="rateBtn"></button></header>
+<div id="list"></div>
+<button class="add" id="addBtn">＋ เพิ่มสัญลักษณ์</button>
+<p class="foot">ราคาหุ้นสหรัฐฯ จาก Finnhub อัปเดตทุก 10 วินาที · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ลบ · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>iPhone: Safari → แชร์ → เพิ่มลงในหน้าจอโฮม</p>
+
+<dialog id="dlg">
+  <div id="dTitle" style="font-weight:700;font-size:17px"></div>
+  <label>สัญลักษณ์</label><input id="fSym">
+  <label>ชื่อ</label><input id="fName">
+  <label>ราคา (USD)</label><input id="fPx" type="number" step="any" inputmode="decimal">
+  <label>เปลี่ยนแปลงวันนี้ (USD)</label><input id="fCh" type="number" step="any" inputmode="decimal">
+  <label>โน้ต (เช่น ราคาทุน)</label><input id="fNote">
+  <div class="btns"><button class="del" id="bDel">ลบ</button><button id="bCancel">ยกเลิก</button><button class="pri" id="bSave">บันทึก</button></div>
+</dialog>
+<dialog id="rdlg">
+  <div style="font-weight:700;font-size:17px">ตั้งค่า</div>
+  <label>1 USD = (บาท) — ปกติดึงอัตโนมัติ</label><input id="fRate" type="number" step="any" inputmode="decimal">
+  <label>Finnhub API Key (ฟรีที่ finnhub.io)</label><input id="fKey" autocapitalize="off" autocorrect="off" placeholder="วางคีย์ที่นี่">
+  <div class="btns"><button id="rCancel">ยกเลิก</button><button class="pri" id="rSave">บันทึก</button></div>
+</dialog>
+
+<script>
+const DEF={rate:32.5,items:[
+{s:"MSFT",n:"Microsoft Corp.",p:543.26,c:-1.92,note:""},
+{s:"META",n:"Meta Platforms Inc Class A",p:645.16,c:3.79,note:"B707"},
+{s:"GOOGL",n:"Alphabet Inc (Google) Class A",p:290.68,c:2.53,note:"B386"},
+{s:"ASML",n:"ASML Holding NV Sponsored ADR",p:1539.23,c:25.98,note:"B1661"},
+{s:"SCHD",n:"Schwab US Dividend Equity ETF",p:35.47,c:0.30,note:"B33.12"},
+{s:"EOSE",n:"Eos Energy Enterprises, Inc.",p:1.87,c:-0.01,note:"ซื้อ WB1.81 Dime1.65"},
+{s:"VTI",n:"Vanguard Total Stock Market ETF",p:368.76,c:6.82,note:""},
+{s:"RKLB",n:"Rocket Lab Corporation",p:58.86,c:0,note:""}]};
+let st,last=null;
+try{st=JSON.parse(localStorage.getItem("wl")||"null")}catch(e){}
+if(!st||!st.items)st=JSON.parse(JSON.stringify(DEF));
+if(!("key" in st))st.key="";
+const save=()=>{try{localStorage.setItem("wl",JSON.stringify(st))}catch(e){}};
+const $=id=>document.getElementById(id);
+const f=(n,d=2)=>n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+let edit=-1;
+
+function render(){
+  $("rateBtn").textContent="฿"+f(st.rate)+" / $1";
+  $("list").innerHTML=st.items.map((it,i)=>{
+    const prev=it.p-it.c,pct=prev?it.c/prev*100:0;
+    const cls=it.c>0?"up":it.c<0?"dn":"fl",sg=it.c>0?"+":it.c<0?"−":"";
+    return `${it.note?`<div class="note"></div>`:""}<div class="row" data-i="${i}"><div><div class="sym"></div><div class="nm"></div></div><div class="r"><div class="px">฿${f(it.p*st.rate)}</div><div class="ch ${cls}">${sg}${f(Math.abs(it.c*st.rate))} &nbsp;${sg}${f(Math.abs(pct))}%</div><div class="usd">$${f(it.p)}</div></div></div>`;
+  }).join("");
+  [...$("list").querySelectorAll(".row")].forEach(r=>{
+    const it=st.items[r.dataset.i];
+    r.querySelector(".sym").textContent=it.s;r.querySelector(".nm").textContent=it.n;
+    if(r.previousElementSibling&&r.previousElementSibling.classList.contains("note"))r.previousElementSibling.textContent=it.note;
+    r.onclick=()=>open(+r.dataset.i);
+  });
+}
+function open(i){
+  edit=i;const it=i>=0?st.items[i]:{s:"",n:"",p:"",c:0,note:""};
+  $("dTitle").textContent=i>=0?"แก้ไข "+it.s:"เพิ่มสัญลักษณ์";
+  $("fSym").value=it.s;$("fName").value=it.n;$("fPx").value=it.p;$("fCh").value=it.c;$("fNote").value=it.note||"";
+  $("bDel").style.display=i>=0?"":"none";$("dlg").showModal();
+}
+$("addBtn").onclick=()=>open(-1);
+$("bCancel").onclick=()=>$("dlg").close();
+$("bSave").onclick=()=>{
+  const it={s:$("fSym").value.trim().toUpperCase(),n:$("fName").value.trim(),p:parseFloat($("fPx").value)||0,c:parseFloat($("fCh").value)||0,note:$("fNote").value.trim()};
+  if(!it.s)return;
+  if(edit>=0)st.items[edit]=it;else st.items.push(it);
+  save();render();$("dlg").close();
+};
+$("bDel").onclick=()=>{st.items.splice(edit,1);save();render();$("dlg").close()};
+$("rateBtn").onclick=()=>{$("fRate").value=st.rate;$("fKey").value=st.key;$("rdlg").showModal()};
+$("rCancel").onclick=()=>$("rdlg").close();
+$("rSave").onclick=()=>{const v=parseFloat($("fRate").value);if(v>0)st.rate=v;st.key=$("fKey").value.trim();save();render();refresh();$("rdlg").close()};
+
+// home-screen icon + manifest
+try{
+  const c=document.createElement("canvas");c.width=c.height=180;const x=c.getContext("2d");
+  x.fillStyle="#2962ff";x.fillRect(0,0,180,180);x.fillStyle="#fff";x.font="bold 110px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText("฿",90,98);
+  $("icon").href=c.toDataURL("image/png");
+  const m={name:"Watchlist ฿",short_name:"Watchlist ฿",display:"standalone",background_color:"#ffffff",theme_color:"#ffffff",start_url:".",icons:[{src:c.toDataURL("image/png"),sizes:"180x180",type:"image/png"}]};
+  const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/json"}));document.head.appendChild(l);
+}catch(e){}
+render();
+// ---- live data ----
+async function getJSON(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json()}
+let rateT=0;
+async function refresh(){
+  if(!st.key){$("stat").textContent="ใส่ API Key ในตั้งค่า (แตะ ฿)";return}
+  try{
+    if(Date.now()-rateT>6e5){try{const j=await getJSON("https://open.er-api.com/v6/latest/USD");if(j.rates&&j.rates.THB){st.rate=j.rates.THB;rateT=Date.now()}}catch(e){}}
+    const res=await Promise.all(st.items.map(it=>getJSON("https://finnhub.io/api/v1/quote?symbol="+encodeURIComponent(it.s)+"&token="+encodeURIComponent(st.key)).catch(()=>null)));
+    res.forEach((q,i)=>{if(q&&q.c){st.items[i].p=q.c;st.items[i].c=q.d||0}});
+    last=new Date();save();render();
+    $("stat").textContent="● สด · "+last.toLocaleTimeString("th-TH");
+  }catch(e){$("stat").textContent="เชื่อมต่อไม่ได้ · ลองใหม่..."}
+}
+setInterval(()=>{if(!document.hidden)refresh()},10000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
+refresh();
+</script>
+</body>
+</html>
