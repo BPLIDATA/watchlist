@@ -41,7 +41,7 @@ input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);ba
 <header><div><h1>📈 Watchlist (฿ บาท)</h1><div class="usd" id="stat">ยังไม่ได้ใส่ API Key</div></div><button class="rate" id="rateBtn"></button></header>
 <div id="list"></div>
 <button class="add" id="addBtn">＋ เพิ่มสัญลักษณ์</button>
-<p class="foot">ราคาหุ้นสหรัฐฯ จาก Finnhub อัปเดตทุก 10 วินาที · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ลบ · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>iPhone: Safari → แชร์ → เพิ่มลงในหน้าจอโฮม</p>
+<p class="foot">ราคาหุ้นสหรัฐฯ จาก Finnhub real-time ผ่าน WebSocket (สำรองทุก 10 วินาที) · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ลบ · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>iPhone: Safari → แชร์ → เพิ่มลงในหน้าจอโฮม</p>
 
 <dialog id="dlg">
   <div id="dTitle" style="font-weight:700;font-size:17px"></div>
@@ -104,12 +104,12 @@ $("bSave").onclick=()=>{
   const it={s:$("fSym").value.trim().toUpperCase(),n:$("fName").value.trim(),p:parseFloat($("fPx").value)||0,c:parseFloat($("fCh").value)||0,note:$("fNote").value.trim()};
   if(!it.s)return;
   if(edit>=0)st.items[edit]=it;else st.items.push(it);
-  save();render();$("dlg").close();
+  save();render();connectWS();$("dlg").close();
 };
-$("bDel").onclick=()=>{st.items.splice(edit,1);save();render();$("dlg").close()};
+$("bDel").onclick=()=>{st.items.splice(edit,1);save();render();connectWS();$("dlg").close()};
 $("rateBtn").onclick=()=>{$("fRate").value=st.rate;$("fKey").value=st.key;$("rdlg").showModal()};
 $("rCancel").onclick=()=>$("rdlg").close();
-$("rSave").onclick=()=>{const v=parseFloat($("fRate").value);if(v>0)st.rate=v;st.key=$("fKey").value.trim();save();render();refresh();$("rdlg").close()};
+$("rSave").onclick=()=>{const v=parseFloat($("fRate").value);if(v>0)st.rate=v;st.key=$("fKey").value.trim();save();render();refresh();connectWS();$("rdlg").close()};
 
 // home-screen icon + manifest
 try{
@@ -128,14 +128,32 @@ async function refresh(){
   try{
     if(Date.now()-rateT>6e5){try{const j=await getJSON("https://open.er-api.com/v6/latest/USD");if(j.rates&&j.rates.THB){st.rate=j.rates.THB;rateT=Date.now()}}catch(e){}}
     const res=await Promise.all(st.items.map(it=>getJSON("https://finnhub.io/api/v1/quote?symbol="+encodeURIComponent(it.s)+"&token="+encodeURIComponent(st.key)).catch(()=>null)));
-    res.forEach((q,i)=>{if(q&&q.c){st.items[i].p=q.c;st.items[i].c=q.d||0}});
+    let ok=0;res.forEach((q,i)=>{if(q&&q.c){ok++;st.items[i].p=q.c;st.items[i].c=q.d||0;st.items[i].pc=q.pc}});
+    if(!ok){$("stat").textContent="⚠ API Key ใช้ไม่ได้ — ตรวจสอบคีย์ในตั้งค่า";return}
     last=new Date();save();render();
-    $("stat").textContent="● สด · "+last.toLocaleTimeString("th-TH");
+    if(!ws||ws.readyState!==1)$("stat").textContent="● อัปเดต "+last.toLocaleTimeString("th-TH");
   }catch(e){$("stat").textContent="เชื่อมต่อไม่ได้ · ลองใหม่..."}
 }
 setInterval(()=>{if(!document.hidden)refresh()},10000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
 refresh();
+// ---- real-time websocket (tick-by-tick) ----
+let ws,wsT,dirty=false;
+function connectWS(){
+  clearTimeout(wsT);
+  try{if(ws){ws.onclose=null;ws.close()}}catch(e){}
+  if(!st.key)return;
+  ws=new WebSocket("wss://ws.finnhub.io?token="+encodeURIComponent(st.key));
+  ws.onopen=()=>st.items.forEach(it=>ws.send(JSON.stringify({type:"subscribe",symbol:it.s})));
+  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
+    if(m.type!=="trade"||!m.data)return;
+    m.data.forEach(t=>{const it=st.items.find(i=>i.s===t.s);if(it){it.p=t.p;if(it.pc)it.c=t.p-it.pc;dirty=true}});
+    $("stat").textContent="● สด real-time · "+new Date().toLocaleTimeString("th-TH");
+  };
+  ws.onclose=()=>{wsT=setTimeout(connectWS,3000)};
+}
+setInterval(()=>{if(dirty){dirty=false;render();save()}},500);
+connectWS();
 </script>
 </body>
 </html>
