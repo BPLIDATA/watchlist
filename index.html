@@ -38,10 +38,10 @@ input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);ba
 </style>
 </head>
 <body>
-<header><div><h1>📈 Watchlist (฿ บาท)</h1><div class="usd" id="stat">ยังไม่ได้ใส่ API Key</div></div><button class="rate" id="rateBtn"></button></header>
+<header><div><h1>📈 Watchlist (฿ บาท)</h1><div class="usd" id="stat">ยังไม่ได้ใส่ Alpaca Key</div></div><button class="rate" id="rateBtn"></button></header>
 <div id="list"></div>
 <button class="add" id="addBtn">＋ เพิ่มสัญลักษณ์</button>
-<p class="foot">ราคาหุ้นสหรัฐฯ จาก Finnhub real-time ผ่าน WebSocket (สำรองทุก 10 วินาที) · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ลบ · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>iPhone: Safari → แชร์ → เพิ่มลงในหน้าจอโฮม</p>
+<p class="foot">ราคาหุ้นสหรัฐฯ จาก Alpaca (ฟีด IEX) real-time ผ่าน WebSocket (สำรองทุก 15 วินาที) · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ลบ · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>iPhone: Safari → แชร์ → เพิ่มลงในหน้าจอโฮม</p>
 
 <dialog id="dlg">
   <div id="dTitle" style="font-weight:700;font-size:17px"></div>
@@ -55,7 +55,8 @@ input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);ba
 <dialog id="rdlg">
   <div style="font-weight:700;font-size:17px">ตั้งค่า</div>
   <label>1 USD = (บาท) — ปกติดึงอัตโนมัติ</label><input id="fRate" type="number" step="any" inputmode="decimal">
-  <label>Finnhub API Key (ฟรีที่ finnhub.io)</label><input id="fKey" autocapitalize="off" autocorrect="off" placeholder="วางคีย์ที่นี่">
+  <label>Alpaca Key ID (ขึ้นต้นด้วย PK...)</label><input id="fKey" autocapitalize="off" autocorrect="off" placeholder="Key ID">
+  <label>Alpaca Secret Key</label><input id="fSec" type="password" autocapitalize="off" autocorrect="off" placeholder="Secret">
   <div class="btns"><button id="rCancel">ยกเลิก</button><button class="pri" id="rSave">บันทึก</button></div>
 </dialog>
 
@@ -72,7 +73,7 @@ const DEF={rate:32.5,items:[
 let st,last=null;
 try{st=JSON.parse(localStorage.getItem("wl")||"null")}catch(e){}
 if(!st||!st.items)st=JSON.parse(JSON.stringify(DEF));
-if(!("key" in st))st.key="";
+if(!("key" in st))st.key="";if(!("sec" in st))st.sec="";
 const save=()=>{try{localStorage.setItem("wl",JSON.stringify(st))}catch(e){}};
 const $=id=>document.getElementById(id);
 const f=(n,d=2)=>n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -107,32 +108,9 @@ $("bSave").onclick=()=>{
   save();render();connectWS();$("dlg").close();
 };
 $("bDel").onclick=()=>{st.items.splice(edit,1);save();render();connectWS();$("dlg").close()};
-$("rateBtn").onclick=()=>{$("fRate").value=st.rate;$("fKey").value=st.key;$("rdlg").showModal()};
+$("rateBtn").onclick=()=>{$("fRate").value=st.rate;$("fKey").value=st.key;$("fSec").value=st.sec;$("rdlg").showModal()};
 $("rCancel").onclick=()=>$("rdlg").close();
-async function resolveKey(raw){
-  const c=raw.match(/[a-z0-9]{20}/gi)||[raw];const msgs=[];
-  for(const k of c){
-    try{
-      const r=await fetch("https://finnhub.io/api/v1/quote?symbol=AAPL&token="+encodeURIComponent(k));
-      const t=await r.text();let j={};try{j=JSON.parse(t)}catch(e){}
-      if(r.ok&&j.c)return{key:k,msg:""};
-      msgs.push(k.slice(0,5)+"…→ "+r.status+" "+t.slice(0,60));
-    }catch(e){msgs.push(k.slice(0,5)+"…→ เชื่อมต่อไม่ได้ ("+e.message+")")}
-  }
-  return{key:"",msg:msgs.join(" | ")};
-}
-$("rSave").onclick=async()=>{
-  const v=parseFloat($("fRate").value);if(v>0)st.rate=v;
-  const raw=$("fKey").value.trim();$("rdlg").close();render();
-  if(!raw){st.key=""}
-  else if(raw!==st.key){
-    $("stat").textContent="กำลังตรวจสอบคีย์...";
-    const r=await resolveKey(raw);
-    if(!r.key){st.key="";save();$("stat").textContent="⚠ คีย์ใช้ไม่ได้: "+r.msg;return}
-    st.key=r.key;
-  }
-  save();refresh();connectWS();
-};
+$("rSave").onclick=()=>{const v=parseFloat($("fRate").value);if(v>0)st.rate=v;st.key=$("fKey").value.trim();st.sec=$("fSec").value.trim();save();render();$("rdlg").close();refresh();connectWS()};
 
 // home-screen icon + manifest
 try{
@@ -143,40 +121,41 @@ try{
   const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/json"}));document.head.appendChild(l);
 }catch(e){}
 render();
-// ---- live data ----
-async function getJSON(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json()}
-let rateT=0,lastErr="";
+// ---- live data (Alpaca) ----
+let rateT=0,ws,wsT,dirty=false,wsOk=false;
+const setStat=t=>{$("stat").textContent=t};
 async function refresh(){
-  if(!st.key){$("stat").textContent="ใส่ API Key ในตั้งค่า (แตะ ฿)";return}
+  if(!st.key||!st.sec){setStat("ใส่ Alpaca Key ในตั้งค่า (แตะ ฿)");return}
+  if(Date.now()-rateT>6e5){try{const r=await fetch("https://open.er-api.com/v6/latest/USD");const j=await r.json();if(j.rates&&j.rates.THB){st.rate=j.rates.THB;rateT=Date.now()}}catch(e){}}
   try{
-    if(Date.now()-rateT>6e5){try{const j=await getJSON("https://open.er-api.com/v6/latest/USD");if(j.rates&&j.rates.THB){st.rate=j.rates.THB;rateT=Date.now()}}catch(e){}}
-    const res=await Promise.all(st.items.map(it=>getJSON("https://finnhub.io/api/v1/quote?symbol="+encodeURIComponent(it.s)+"&token="+encodeURIComponent(st.key)).catch(e=>{lastErr=e.message;return null})));
-    let ok=0;res.forEach((q,i)=>{if(q&&q.c){ok++;st.items[i].p=q.c;st.items[i].c=q.d||0;st.items[i].pc=q.pc}});
-    if(!ok){$("stat").textContent="⚠ ดึงราคาไม่สำเร็จ (รหัส "+lastErr+")";return}
-    last=new Date();save();render();
-    if(!ws||ws.readyState!==1)$("stat").textContent="● อัปเดต "+last.toLocaleTimeString("th-TH");
-  }catch(e){$("stat").textContent="เชื่อมต่อไม่ได้ · ลองใหม่..."}
+    const syms=st.items.map(i=>i.s).join(",");
+    const r=await fetch("https://data.alpaca.markets/v2/stocks/snapshots?feed=iex&symbols="+encodeURIComponent(syms),{headers:{"APCA-API-KEY-ID":st.key,"APCA-API-SECRET-KEY":st.sec}});
+    const t=await r.text();
+    if(!r.ok){setStat("⚠ Alpaca "+r.status+": "+t.slice(0,80));return}
+    const j=JSON.parse(t);let ok=0;
+    st.items.forEach(it=>{const q=j[it.s];if(!q)return;const p=q.latestTrade&&q.latestTrade.p;const pc=q.prevDailyBar&&q.prevDailyBar.c;if(p){ok++;it.p=p;if(pc){it.pc=pc;it.c=p-pc}}});
+    if(!ok){setStat("⚠ ไม่พบราคาจาก Alpaca");return}
+    save();render();if(!wsOk)setStat("● อัปเดต "+new Date().toLocaleTimeString("th-TH"));
+  }catch(e){setStat("⚠ ดึงราคา REST ไม่ได้ ("+e.message+") อาจถูกบล็อก CORS")}
 }
-setInterval(()=>{if(!document.hidden)refresh()},10000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
-refresh();
-// ---- real-time websocket (tick-by-tick) ----
-let ws,wsT,dirty=false;
 function connectWS(){
-  clearTimeout(wsT);
+  clearTimeout(wsT);wsOk=false;
   try{if(ws){ws.onclose=null;ws.close()}}catch(e){}
-  if(!st.key)return;
-  ws=new WebSocket("wss://ws.finnhub.io?token="+encodeURIComponent(st.key));
-  ws.onopen=()=>st.items.forEach(it=>ws.send(JSON.stringify({type:"subscribe",symbol:it.s})));
-  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
-    if(m.type!=="trade"||!m.data)return;
-    m.data.forEach(t=>{const it=st.items.find(i=>i.s===t.s);if(it){it.p=t.p;if(it.pc)it.c=t.p-it.pc;dirty=true}});
-    $("stat").textContent="● สด real-time · "+new Date().toLocaleTimeString("th-TH");
-  };
-  ws.onclose=()=>{wsT=setTimeout(connectWS,3000)};
+  if(!st.key||!st.sec)return;
+  ws=new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
+  ws.onopen=()=>ws.send(JSON.stringify({action:"auth",key:st.key,secret:st.sec}));
+  ws.onmessage=e=>{let a;try{a=JSON.parse(e.data)}catch(x){return}
+    a.forEach(m=>{
+      if(m.T==="success"&&m.msg==="authenticated"){ws.send(JSON.stringify({action:"subscribe",trades:st.items.map(i=>i.s)}));wsOk=true;setStat("● เชื่อมต่อ real-time แล้ว (รอรายการซื้อขาย)")}
+      else if(m.T==="error"){wsOk=false;setStat("⚠ Alpaca WS "+m.code+": "+m.msg)}
+      else if(m.T==="t"){const it=st.items.find(i=>i.s===m.S);if(it){it.p=m.p;if(it.pc)it.c=m.p-it.pc;dirty=true;setStat("● สด real-time · "+new Date().toLocaleTimeString("th-TH"))}}
+    })};
+  ws.onclose=()=>{wsOk=false;wsT=setTimeout(connectWS,10000)};
 }
 setInterval(()=>{if(dirty){dirty=false;render();save()}},500);
-connectWS();
+setInterval(()=>{if(!document.hidden)refresh()},15000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
+refresh();connectWS();
 </script>
 </body>
 </html>
