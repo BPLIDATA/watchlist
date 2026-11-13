@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>ViewDime</title>
-<meta name="app-version" content="8">
+<meta name="app-version" content="9">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -47,15 +47,32 @@ input[type=checkbox]{width:auto;margin-right:8px}
 .btns{display:flex;gap:8px;margin-top:16px}.btns button{flex:1;padding:12px;border-radius:10px;border:0;font-size:15px;background:var(--chip);color:var(--fg)}
 .btns .pri{background:#2962ff;color:#fff}.btns .del{color:var(--dn)}
 .foot{font-size:12px;color:var(--mut);text-align:center;padding:0 18px 20px}
+.tabs{display:flex;border-bottom:1px solid var(--line);margin-top:8px}
+.tab{flex:1;padding:12px;background:none;border:0;border-bottom:3px solid transparent;font-size:15px;font-weight:600;color:var(--mut)}
+.tab.on{color:var(--fg);border-color:#2962ff}
+.plus{flex:none;margin-left:10px;border:0;background:#2962ff;color:#fff;border-radius:50%;width:34px;height:34px;font-size:20px;line-height:1}
+.plus.done{background:var(--chip);color:var(--up)}
+.srch{display:flex;gap:8px;padding:4px 18px 6px}.srch input{flex:1}
+.srch button{border:0;border-radius:10px;background:#2962ff;color:#fff;padding:0 16px;font-size:15px}
+#xmsg{padding:0 18px;min-height:16px}
 </style>
 </head>
 <body>
 <header><div><h1>📈 ViewDime</h1><div class="usd" id="stat">ยังไม่ได้ใส่ Alpaca Key</div></div><button class="rate" id="rateBtn"></button></header>
 <div id="banner"></div>
+<div class="tabs" id="tabs"></div>
+<div id="mine">
 <div class="sum" id="sum"></div>
 <div class="chips" id="chips"></div>
 <div id="list"></div>
 <button class="add" id="addBtn">＋ เพิ่มสัญลักษณ์</button>
+</div>
+<div id="explore" style="display:none">
+<div class="chips" id="xchips"></div>
+<div class="srch"><input id="xq" placeholder="ค้นหาชื่อย่อหุ้น เช่น AMD, TSLA" autocapitalize="characters" autocorrect="off"><button id="xgo">ค้นหา</button></div>
+<div class="usd" id="xmsg"></div>
+<div id="xlist"></div>
+</div>
 <p class="foot">ราคาหุ้นสหรัฐฯ จาก Alpaca (ฟีด IEX) real-time ผ่าน WebSocket · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ตั้งจำนวนหุ้น/ราคาเตือน · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>ราคาเตือนทำงานเฉพาะตอนเปิดแอปอยู่ · กำไร/ขาดทุนคำนวณด้วยเรตปัจจุบัน<br><span id="sy"></span></p>
 <p class="foot" style="padding-bottom:60px">ViewDime <b id="vn"></b><br>พัฒนาโดย ธนพงษ์ คิดประเสริฐ</p>
 
@@ -287,6 +304,72 @@ async function pull(){
   }catch(e){sy("☁ ซิงก์ไม่สำเร็จ ("+e.message+")")}
 }
 
+// ---- สำรวจหุ้นที่ยังไม่ได้เพิ่ม ----
+let tab="mine",xt="active";const ex={};
+const SCR="https://data.alpaca.markets/v1beta1/screener/stocks";
+const XL={
+ mag7:[["AAPL","Apple"],["MSFT","Microsoft"],["GOOGL","Alphabet (Google)"],["AMZN","Amazon"],["META","Meta Platforms"],["NVDA","NVIDIA"],["TSLA","Tesla"]],
+ semi:[["NVDA","NVIDIA"],["AMD","AMD"],["AVGO","Broadcom"],["TSM","TSMC (ADR)"],["ASML","ASML (ADR)"],["INTC","Intel"],["MU","Micron"],["QCOM","Qualcomm"],["AMAT","Applied Materials"],["LRCX","Lam Research"]],
+ ai:[["PLTR","Palantir"],["ORCL","Oracle"],["CRM","Salesforce"],["NOW","ServiceNow"],["CRWD","CrowdStrike"],["SNOW","Snowflake"],["ADBE","Adobe"],["PANW","Palo Alto Networks"]],
+ div:[["SCHD","Schwab US Dividend ETF"],["VYM","Vanguard High Dividend ETF"],["VIG","Vanguard Dividend Appreciation"],["JEPI","JPMorgan Equity Premium Income"],["O","Realty Income"],["KO","Coca-Cola"],["JNJ","Johnson & Johnson"],["PG","Procter & Gamble"],["XOM","Exxon Mobil"]],
+ etf:[["VOO","Vanguard S&P 500"],["VTI","Vanguard Total Market"],["SPY","SPDR S&P 500"],["QQQ","Invesco QQQ (Nasdaq 100)"],["VT","Vanguard Total World"],["VXUS","Vanguard Intl ex-US"],["BND","Vanguard Total Bond"],["GLD","SPDR Gold (ทองคำ)"],["IAU","iShares Gold (ทองคำ)"],["SLV","iShares Silver (เงิน)"]]
+};
+const XT=[["active","🔥 ยอดนิยม"],["up","📈 ขึ้นแรง"],["down","📉 ลงแรง"],["mag7","💻 Big Tech"],["semi","🔬 เซมิคอนดักเตอร์"],["ai","🤖 AI/ซอฟต์แวร์"],["div","💰 ปันผล"],["etf","🏛 ETF/ทอง"]];
+function renderTabs(){
+  $("tabs").innerHTML=[["mine","★ ของฉัน"],["ex","🔍 สำรวจหุ้น"]].map(([k,t])=>`<button class="tab${tab===k?" on":""}" data-k="${k}">${t}</button>`).join("");
+  $("mine").style.display=tab==="mine"?"":"none";$("explore").style.display=tab==="ex"?"":"none";
+}
+$("tabs").onclick=e=>{const b=e.target.closest(".tab");if(!b)return;tab=b.dataset.k;renderTabs();if(tab==="ex"){renderEx();loadEx()}else render()};
+function renderXChips(){$("xchips").innerHTML=XT.map(([k,t])=>`<button class="chip${xt===k?" on":""}" data-k="${k}">${t}</button>`).join("")}
+$("xchips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;xt=b.dataset.k;$("xmsg").textContent="";renderXChips();renderEx();loadEx()};
+async function getj(u){const r=await fetch(u,{headers:hdr()});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
+async function snapRows(list){
+  const j=await getj("https://data.alpaca.markets/v2/stocks/snapshots?feed=iex&symbols="+encodeURIComponent(list.map(x=>x[0]).join(",")));
+  return list.map(([s,n])=>{const q=j[s]||{},p=(q.latestTrade&&q.latestTrade.p)||0,pc=(q.prevDailyBar&&q.prevDailyBar.c)||0;return{s,n,p,pc,c:p&&pc?p-pc:0}}).filter(x=>x.p);
+}
+async function loadEx(){
+  if(tab!=="ex"||xt==="search")return;
+  if(!st.key||!st.sec){$("xmsg").textContent="ใส่ Alpaca Key ก่อน (แตะ ฿)";return}
+  const k=xt;if(!ex[k])$("xmsg").textContent="กำลังโหลด…";
+  try{
+    let list;
+    if(k==="active"){const j=await getj(SCR+"/most-actives?by=volume&top=30");list=(j.most_actives||[]).map(x=>[x.symbol,""])}
+    else if(k==="up"||k==="down"){const j=await getj(SCR+"/movers?top=50");const a=(k==="up"?j.gainers:j.losers)||[];
+      list=a.filter(x=>x.price===undefined||x.price>=5).map(x=>[x.symbol,""])}
+    else list=XL[k];
+    list=list.filter(x=>/^[A-Z]{1,5}$/.test(x[0])).slice(0,25);
+    if(!list.length){ex[k]=[];if(k===xt)$("xmsg").textContent="ไม่มีข้อมูลในขณะนี้ (ตลาดอาจยังไม่เปิด)";renderEx();return}
+    ex[k]=await snapRows(list);
+    if(k===xt&&tab==="ex"){$("xmsg").textContent=ex[k].length?"":"ไม่มีข้อมูลในขณะนี้";renderEx()}
+  }catch(e){if(k===xt)$("xmsg").textContent="⚠ โหลดไม่ได้ ("+e.message+")"}
+}
+function renderEx(){
+  const rows=ex[xt]||[],have=new Set(st.items.map(i=>i.s));
+  $("xlist").innerHTML=rows.map(x=>{const pc=x.pc?x.c/x.pc*100:0,d=have.has(x.s);
+    return `<div class="row"><div class="l"><div class="sym">${esc(x.s)}</div><div class="nm">${esc(x.n)}</div></div><div class="r"><div class="px">฿${f(x.p*st.rate)}</div><div class="ch ${cl(x.c)}">${sg(x.c)}${f(Math.abs(x.c*st.rate))} &nbsp;${sg(x.c)}${f(Math.abs(pc))}%</div><div class="usd">$${f(x.p)}</div></div><button class="plus${d?" done":""}" data-s="${esc(x.s)}">${d?"✓":"＋"}</button></div>`}).join("");
+}
+function addSym(s){
+  if(st.items.some(i=>i.s===s))return;
+  const row=Object.values(ex).flat().find(x=>x.s===s)||{};
+  st.items.push({s,n:row.n||"",p:row.p||0,c:row.c||0,pc:row.pc,note:"",q:0,k:0,hi:0,lo:0});
+  push();render();renderEx();connectWS();loadHist();
+  $("xmsg").textContent="✓ เพิ่ม "+s+" ในรายการ ★ ของฉันแล้ว";
+}
+$("xlist").onclick=e=>{const b=e.target.closest(".plus");if(!b||b.classList.contains("done"))return;addSym(b.dataset.s)};
+async function xSearch(){
+  const s=$("xq").value.trim().toUpperCase().replace(/[^A-Z.]/g,"");if(!s)return;
+  if(!st.key||!st.sec){$("xmsg").textContent="ใส่ Alpaca Key ก่อน (แตะ ฿)";return}
+  $("xmsg").textContent="กำลังค้นหา "+s+"…";
+  try{
+    const rows=await snapRows([[s,""]]);
+    if(!rows.length){$("xmsg").textContent="ไม่พบ "+s+" (ชื่อย่อผิดหรือยังไม่มีราคา) ลองตรวจชื่อย่ออีกครั้ง";return}
+    ex.search=rows;xt="search";renderXChips();$("xmsg").textContent="";renderEx();
+  }catch(e){$("xmsg").textContent="⚠ ค้นหาไม่ได้ ("+e.message+")"}
+}
+$("xgo").onclick=xSearch;
+$("xq").onkeydown=e=>{if(e.key==="Enter")xSearch()};
+setInterval(()=>{if(!document.hidden&&tab==="ex")loadEx()},15000);
+
 // ---- อัปเดตตัวเอง ----
 const VER=(document.querySelector('meta[name="app-version"]')||{}).content;
 $("vn").textContent="v"+VER;
@@ -304,7 +387,7 @@ setInterval(()=>{if(dirty){dirty=false;checkAlerts();render();save()}},500);
 setInterval(()=>{if(!document.hidden)refresh()},15000);
 setInterval(()=>{if(!document.hidden)pull()},5000);
 setInterval(checkUpdate,300000);
-renderChips();renderBanner();render();
+renderTabs();renderXChips();renderChips();renderBanner();render();
 refresh();connectWS();pull();checkUpdate();
 </script>
 </body>
