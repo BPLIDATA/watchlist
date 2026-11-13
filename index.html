@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>ViewDime</title>
-<meta name="app-version" content="6">
+<meta name="app-version" content="7">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -169,7 +169,7 @@ function connectWS(){
 }
 const DB="https://viewdime-default-rtdb.asia-southeast1.firebasedatabase.app";
 const lurl=()=>DB+"/lists/"+encodeURIComponent(st.sc)+".json";
-const sy=t=>{const e=$("sy");if(e)e.textContent=t};
+const sy=t=>{const e=$("sy");if(e)e.textContent=t+" · รหัสท้าย …"+st.sc.slice(-4)};
 const slim=()=>st.items.map(i=>({s:i.s,n:i.n||"",note:i.note||""}));
 async function push(){
   st.ts=Date.now();save();
