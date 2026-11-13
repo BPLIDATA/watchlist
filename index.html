@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>ViewDime</title>
-<meta name="app-version" content="7">
+<meta name="app-version" content="8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -12,46 +12,62 @@
 <meta name="theme-color" content="#ffffff">
 <link rel="apple-touch-icon" id="icon" href="">
 <style>
-:root{--bg:#fff;--fg:#111;--mut:#777;--line:#e6e6e6;--up:#1f8a5b;--dn:#c0392b;--chip:#f1f1f1;--card:#fff;
+:root{--bg:#fff;--fg:#111;--mut:#777;--line:#e6e6e6;--up:#1f8a5b;--dn:#c0392b;--chip:#f1f1f1;--card:#fff;--wbg:#fff3cd;--wfg:#664d03;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111;--fg:#f2f2f2;--mut:#999;--line:#2a2a2a;--up:#3ecf8e;--dn:#ff6b5b;--chip:#222;--card:#1b1b1b}}
-:root[data-theme="dark"]{--bg:#111;--fg:#f2f2f2;--mut:#999;--line:#2a2a2a;--up:#3ecf8e;--dn:#ff6b5b;--chip:#222;--card:#1b1b1b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111;--fg:#f2f2f2;--mut:#999;--line:#2a2a2a;--up:#3ecf8e;--dn:#ff6b5b;--chip:#222;--card:#1b1b1b;--wbg:#4a3b0a;--wfg:#ffe69c}}
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Sukhumvit Set","Noto Sans Thai",system-ui,sans-serif;max-width:520px;margin:0 auto}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);border-bottom:1px solid var(--line);z-index:5}
 h1{font-size:18px;margin:0}
 .rate{background:var(--chip);border-radius:20px;padding:8px 14px;font-size:14px;border:0;color:var(--fg)}
-.row{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.sum{margin:12px 18px 4px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.sum .big{font-size:26px;font-weight:700}
+.sum .sub{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-top:6px;flex-wrap:wrap}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:8px 18px}
+.chip{flex:none;border:0;background:var(--chip);color:var(--fg);border-radius:16px;padding:7px 12px;font-size:13px}
+.chip.on{background:#2962ff;color:#fff}
+.banner{margin:10px 18px 0;padding:12px 14px;border-radius:12px;background:var(--wbg);color:var(--wfg);font-size:14px}
+.row{display:flex;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.row .l{flex:1;min-width:0}
 .note{font-size:12px;font-weight:700;color:var(--mut);padding:10px 18px 0}
-.sym{font-size:20px;font-weight:600}.nm{font-size:14px;color:var(--mut);max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.r{text-align:right}.px{font-size:20px;font-weight:600}.ch{font-size:14px}
+.sym{font-size:19px;font-weight:600}
+.nm{font-size:13px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spark{width:64px;height:24px;margin:0 10px;flex:none}
+.r{text-align:right;flex:none}.px{font-size:19px;font-weight:600}.ch{font-size:13px}
 .up{color:var(--up)}.dn{color:var(--dn)}.fl{color:var(--fg)}
-.usd{font-size:11px;color:var(--mut)}
+.usd{font-size:11px;color:var(--mut)}.hold{font-size:12px}
 .add{display:block;margin:24px auto;background:var(--chip);color:var(--fg);border:0;border-radius:28px;padding:14px 24px;font-size:16px;font-weight:600}
-dialog{border:0;border-radius:16px;background:var(--card);color:var(--fg);width:90%;max-width:400px;padding:18px}
+dialog{border:0;border-radius:16px;background:var(--card);color:var(--fg);width:92%;max-width:400px;padding:18px;max-height:92vh;overflow:auto}
 dialog::backdrop{background:#0008}
 label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
 input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:16px}
+input[type=checkbox]{width:auto;margin-right:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .btns{display:flex;gap:8px;margin-top:16px}.btns button{flex:1;padding:12px;border-radius:10px;border:0;font-size:15px;background:var(--chip);color:var(--fg)}
 .btns .pri{background:#2962ff;color:#fff}.btns .del{color:var(--dn)}
-.foot{font-size:12px;color:var(--mut);text-align:center;padding:0 18px 40px}
+.foot{font-size:12px;color:var(--mut);text-align:center;padding:0 18px 20px}
 </style>
 </head>
 <body>
 <header><div><h1>📈 ViewDime</h1><div class="usd" id="stat">ยังไม่ได้ใส่ Alpaca Key</div></div><button class="rate" id="rateBtn"></button></header>
+<div id="banner"></div>
+<div class="sum" id="sum"></div>
+<div class="chips" id="chips"></div>
 <div id="list"></div>
 <button class="add" id="addBtn">＋ เพิ่มสัญลักษณ์</button>
-<p class="foot">ราคาหุ้นสหรัฐฯ จาก Alpaca (ฟีด IEX) real-time ผ่าน WebSocket (สำรองทุก 15 วินาที) · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ลบ · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>ใส่คีย์ใน Safari ก่อน แล้วค่อยเพิ่มลงหน้าจอโฮม แอปจะจำคีย์ให้เอง<br><span id="sy"></span><br>iPhone: Safari → แชร์ → เพิ่มลงในหน้าจอโฮม</p>
+<p class="foot">ราคาหุ้นสหรัฐฯ จาก Alpaca (ฟีด IEX) real-time ผ่าน WebSocket · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ตั้งจำนวนหุ้น/ราคาเตือน · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>ราคาเตือนทำงานเฉพาะตอนเปิดแอปอยู่ · กำไร/ขาดทุนคำนวณด้วยเรตปัจจุบัน<br><span id="sy"></span></p>
 <p class="foot" style="padding-bottom:60px">ViewDime <b id="vn"></b><br>พัฒนาโดย ธนพงษ์ คิดประเสริฐ</p>
 
 <dialog id="dlg">
   <div id="dTitle" style="font-weight:700;font-size:17px"></div>
-  <label>สัญลักษณ์</label><input id="fSym">
-  <label>ชื่อ</label><input id="fName">
-  <label>ราคา (USD)</label><input id="fPx" type="number" step="any" inputmode="decimal">
-  <label>เปลี่ยนแปลงวันนี้ (USD)</label><input id="fCh" type="number" step="any" inputmode="decimal">
-  <label>โน้ต (เช่น ราคาทุน)</label><input id="fNote">
+  <label>สัญลักษณ์ (ชื่อย่อหุ้นสหรัฐฯ เช่น NVDA)</label><input id="fSym" autocapitalize="characters" autocorrect="off">
+  <label>ชื่อ (ไม่ใส่ก็ได้)</label><input id="fName">
+  <div class="grid2"><div><label>จำนวนหุ้นที่ถือ</label><input id="fQty" type="number" step="any" inputmode="decimal"></div>
+  <div><label>ต้นทุนเฉลี่ย (USD/หุ้น)</label><input id="fCost" type="number" step="any" inputmode="decimal"></div></div>
+  <div class="grid2"><div><label>🔔 เตือนเมื่อขึ้นถึง (USD)</label><input id="fHi" type="number" step="any" inputmode="decimal"></div>
+  <div><label>🔔 เตือนเมื่อลงถึง (USD)</label><input id="fLo" type="number" step="any" inputmode="decimal"></div></div>
+  <label>โน้ต</label><input id="fNote">
   <div class="btns"><button class="del" id="bDel">ลบ</button><button id="bCancel">ยกเลิก</button><button class="pri" id="bSave">บันทึก</button></div>
 </dialog>
 <dialog id="rdlg">
@@ -60,6 +76,7 @@ input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);ba
   <label>Alpaca Key ID (ขึ้นต้นด้วย PK...)</label><input id="fKey" autocapitalize="off" autocorrect="off" placeholder="Key ID">
   <label>Alpaca Secret Key</label><input id="fSec" type="password" autocapitalize="off" autocorrect="off" placeholder="Secret">
   <label>รหัสซิงก์รายการหุ้น (ใช้รหัสเดียวกันทุกเครื่อง)</label><input id="fCode" autocapitalize="off" autocorrect="off">
+  <label style="margin-top:14px;color:var(--fg)"><input type="checkbox" id="fHold">ซิงก์จำนวนหุ้น/ต้นทุน/ราคาเตือนขึ้นออนไลน์ด้วย<br><span style="color:var(--mut)">ปิดไว้ = เก็บเฉพาะในเครื่องนี้ (เป็นส่วนตัวกว่า)</span></label>
   <button class="rate" id="copyLink" style="margin-top:12px;width:100%">📋 คัดลอกลิงก์สำหรับเครื่องอื่น</button>
   <div class="btns"><button id="rCancel">ยกเลิก</button><button class="pri" id="rSave">บันทึก</button></div>
 </dialog>
@@ -74,12 +91,20 @@ const DEF={rate:32.5,items:[
 {s:"EOSE",n:"Eos Energy Enterprises, Inc.",p:1.87,c:-0.01,note:"ซื้อ WB1.81 Dime1.65"},
 {s:"VTI",n:"Vanguard Total Stock Market ETF",p:368.76,c:6.82,note:""},
 {s:"RKLB",n:"Rocket Lab Corporation",p:58.86,c:0,note:""}]};
-let st,last=null;
+let st;
 try{st=JSON.parse(localStorage.getItem("wl")||"null")}catch(e){}
 if(!st||!st.items)st=JSON.parse(JSON.stringify(DEF));
-if(!("key" in st))st.key="";if(!("sec" in st))st.sec="";
+st.key=st.key||"";st.sec=st.sec||"";st.sort=st.sort||"manual";st.fired=st.fired||{};st.msgs=st.msgs||[];
 const save=()=>{try{localStorage.setItem("wl",JSON.stringify(st))}catch(e){}};
-// จำคีย์ไว้ในลิงก์ (#k=...&s=...) เพื่อให้แอปบนหน้าโฮมได้คีย์เดียวกับ Safari ไม่ต้องใส่ซ้ำ
+const $=id=>document.getElementById(id);
+const f=(n,d=2)=>Number(n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const sg=n=>n>0?"+":n<0?"−":"";
+const cl=n=>n>0?"up":n<0?"dn":"fl";
+const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=v=>parseFloat(v)||0;
+let edit=-1,hist={},histT=0,rateT=0,ws,wsT,dirty=false,wsOk=false;
+
+// ---- คีย์/รหัสซิงก์ในลิงก์ (#k=..&s=..&c=..) ----
 function syncHash(){try{const p=[];if(st.key&&st.sec)p.push("k="+encodeURIComponent(st.key),"s="+encodeURIComponent(st.sec));if(st.sc)p.push("c="+encodeURIComponent(st.sc));history.replaceState(null,"",location.pathname+location.search+(p.length?"#"+p.join("&"):""))}catch(e){}}
 (function(){
   const h=new URLSearchParams(location.hash.slice(1));
@@ -88,46 +113,99 @@ function syncHash(){try{const p=[];if(st.key&&st.sec)p.push("k="+encodeURICompon
   if(!st.sc){const a=new Uint8Array(24);crypto.getRandomValues(a);st.sc=Array.from(a,b=>(b%36).toString(36)).join("");st.ts=0}
   save();syncHash();
 })();
-const $=id=>document.getElementById(id);
-const f=(n,d=2)=>n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
-let edit=-1;
 
+// ---- แสดงผล ----
+const SORTS=[["manual","เรียงเอง"],["day","% วันนี้"],["val","มูลค่า"],["pl","กำไร %"],["az","A–Z"]];
+function renderChips(){$("chips").innerHTML=SORTS.map(([k,t])=>`<button class="chip${st.sort===k?" on":""}" data-k="${k}">${t}</button>`).join("")}
+$("chips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;st.sort=b.dataset.k;save();renderChips();render()};
+function ord(){
+  const ix=st.items.map((_,i)=>i),g=i=>st.items[i];
+  const kf={day:i=>{const it=g(i),pv=it.p-it.c;return pv?it.c/pv:0},val:i=>(g(i).q||0)*g(i).p,pl:i=>{const it=g(i);return it.q&&it.k?it.p/it.k-1:-9}};
+  if(st.sort==="az")ix.sort((a,b)=>g(a).s.localeCompare(g(b).s));
+  else if(kf[st.sort])ix.sort((a,b)=>kf[st.sort](b)-kf[st.sort](a));
+  return ix;
+}
+function spark(it){
+  const h=hist[it.s];if(!h||h.length<2)return"";
+  const a=h.slice(-30).concat(it.p?[it.p]:[]),mn=Math.min(...a),mx=Math.max(...a),w=64,hh=24;
+  const pts=a.map((v,i)=>(i/(a.length-1)*w).toFixed(1)+","+(hh-1-(mx>mn?(v-mn)/(mx-mn)*(hh-2):hh/2)).toFixed(1)).join(" ");
+  return `<svg class="spark" viewBox="0 0 ${w} ${hh}"><polyline fill="none" stroke="var(${a[a.length-1]>=a[0]?"--up":"--dn"})" stroke-width="1.6" points="${pts}"/></svg>`;
+}
+function renderSum(){
+  let val=0,day=0,cost=0,valK=0,n=0;
+  st.items.forEach(it=>{const q=it.q||0;if(!q||!it.p)return;n++;val+=q*it.p;day+=q*it.c;if(it.k){cost+=q*it.k;valK+=q*it.p}});
+  const r=st.rate;
+  if(!n){$("sum").innerHTML='<div class="usd">ใส่จำนวนหุ้นและต้นทุน (แตะที่แถวหุ้น) เพื่อดูมูลค่าพอร์ตและกำไร/ขาดทุนเป็นบาท</div>';return}
+  const dp=val-day?day/(val-day)*100:0,pl=valK-cost,pp=cost?pl/cost*100:0;
+  $("sum").innerHTML=`<div class="usd">มูลค่าพอร์ต</div><div class="big">฿${f(val*r)}</div><div class="sub"><span class="${cl(day)}">วันนี้ ${sg(day)}฿${f(Math.abs(day*r))} (${sg(dp)}${f(Math.abs(dp))}%)</span>${cost?`<span class="${cl(pl)}">กำไรสะสม ${sg(pl)}฿${f(Math.abs(pl*r))} (${sg(pp)}${f(Math.abs(pp))}%)</span>`:""}</div>`;
+}
 function render(){
   $("rateBtn").textContent="฿"+f(st.rate)+" / $1";
-  $("list").innerHTML=st.items.map((it,i)=>{
-    const prev=it.p-it.c,pct=prev?it.c/prev*100:0;
-    const cls=it.c>0?"up":it.c<0?"dn":"fl",sg=it.c>0?"+":it.c<0?"−":"";
-    return `${it.note?`<div class="note"></div>`:""}<div class="row" data-i="${i}"><div><div class="sym"></div><div class="nm"></div></div><div class="r"><div class="px">฿${f(it.p*st.rate)}</div><div class="ch ${cls}">${sg}${f(Math.abs(it.c*st.rate))} &nbsp;${sg}${f(Math.abs(pct))}%</div><div class="usd">$${f(it.p)}</div></div></div>`;
+  renderSum();
+  $("list").innerHTML=ord().map(i=>{
+    const it=st.items[i],pv=it.p-it.c,pct=pv?it.c/pv*100:0,q=it.q||0,k=it.k||0;
+    let hold="";
+    if(q&&k&&it.p){const pl=(it.p-k)*q*st.rate,pp=(it.p/k-1)*100;hold=`<div class="hold ${cl(pl)}">กำไร ${sg(pl)}฿${f(Math.abs(pl))} (${sg(pp)}${f(Math.abs(pp))}%)</div>`}
+    return `${it.note?`<div class="note">${esc(it.note)}</div>`:""}<div class="row" data-i="${i}"><div class="l"><div class="sym">${esc(it.s)}${it.hi||it.lo?" 🔔":""}</div><div class="nm">${esc(it.n)}</div></div>${spark(it)}<div class="r"><div class="px">${it.p?"฿"+f(it.p*st.rate):"…"}</div><div class="ch ${cl(it.c)}">${sg(it.c)}${f(Math.abs(it.c*st.rate))} &nbsp;${sg(it.c)}${f(Math.abs(pct))}%</div><div class="usd">$${f(it.p)}${q?" · ถือ "+q:""}</div>${hold}</div></div>`;
   }).join("");
-  [...$("list").querySelectorAll(".row")].forEach(r=>{
-    const it=st.items[r.dataset.i];
-    r.querySelector(".sym").textContent=it.s;r.querySelector(".nm").textContent=it.n;
-    if(r.previousElementSibling&&r.previousElementSibling.classList.contains("note"))r.previousElementSibling.textContent=it.note;
-    r.onclick=()=>open(+r.dataset.i);
+}
+$("list").onclick=e=>{const r=e.target.closest(".row");if(r)openEdit(+r.dataset.i)};
+
+// ---- ราคาเตือน ----
+function renderBanner(){
+  $("banner").innerHTML=st.msgs.length?`<div class="banner">${st.msgs.map(m=>"🔔 "+esc(m)).join("<br>")}<br><button class="rate" id="bnX" style="margin-top:8px">ปิดการแจ้งเตือน</button></div>`:"";
+  const b=$("bnX");if(b)b.onclick=()=>{st.msgs=[];save();renderBanner()};
+}
+function fire(m){
+  st.msgs.push(m);if(st.msgs.length>10)st.msgs.shift();save();renderBanner();
+  try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
+  try{if("Notification" in window&&Notification.permission==="granted")new Notification("ViewDime",{body:m})}catch(e){}
+}
+function checkAlerts(){
+  st.items.forEach(it=>{
+    if(!it.p)return;
+    [["h",it.hi,it.p>=it.hi,"ขึ้นถึง"],["l",it.lo,it.p<=it.lo,"ลงถึง"]].forEach(([t,v,hit,w])=>{
+      const k=it.s+":"+t;
+      if(v&&hit&&!st.fired[k]){st.fired[k]=1;fire(it.s+" "+w+" $"+f(v)+" (ตอนนี้ $"+f(it.p)+")")}
+    });
   });
 }
-function open(i){
-  edit=i;const it=i>=0?st.items[i]:{s:"",n:"",p:"",c:0,note:""};
+
+// ---- แก้ไข/เพิ่มหุ้น ----
+function openEdit(i){
+  edit=i;const it=i>=0?st.items[i]:{s:"",n:"",q:"",k:"",hi:"",lo:"",note:""};
   $("dTitle").textContent=i>=0?"แก้ไข "+it.s:"เพิ่มสัญลักษณ์";
-  $("fSym").value=it.s;$("fName").value=it.n;$("fPx").value=it.p;$("fCh").value=it.c;$("fNote").value=it.note||"";
+  $("fSym").value=it.s;$("fName").value=it.n||"";$("fQty").value=it.q||"";$("fCost").value=it.k||"";
+  $("fHi").value=it.hi||"";$("fLo").value=it.lo||"";$("fNote").value=it.note||"";
   $("bDel").style.display=i>=0?"":"none";$("dlg").showModal();
 }
-$("addBtn").onclick=()=>open(-1);
+$("addBtn").onclick=()=>openEdit(-1);
 $("bCancel").onclick=()=>$("dlg").close();
 $("bSave").onclick=()=>{
-  const it={s:$("fSym").value.trim().toUpperCase(),n:$("fName").value.trim(),p:parseFloat($("fPx").value)||0,c:parseFloat($("fCh").value)||0,note:$("fNote").value.trim()};
-  if(!it.s)return;
+  const s=$("fSym").value.trim().toUpperCase();if(!s)return;
+  const old=edit>=0?st.items[edit]:{p:0,c:0};
+  const it=Object.assign({},old,{s,n:$("fName").value.trim(),note:$("fNote").value.trim(),q:num($("fQty").value),k:num($("fCost").value),hi:num($("fHi").value),lo:num($("fLo").value)});
+  delete st.fired[s+":h"];delete st.fired[s+":l"];
   if(edit>=0)st.items[edit]=it;else st.items.push(it);
-  push();render();connectWS();$("dlg").close();
+  if((it.hi||it.lo)&&"Notification" in window&&Notification.permission==="default")try{Notification.requestPermission()}catch(e){}
+  push();render();$("dlg").close();connectWS();refresh();loadHist();
 };
-$("bDel").onclick=()=>{st.items.splice(edit,1);push();render();connectWS();$("dlg").close()};
-$("rateBtn").onclick=()=>{$("fRate").value=st.rate;$("fKey").value=st.key;$("fSec").value=st.sec;$("fCode").value=st.sc;$("copyLink").textContent="📋 คัดลอกลิงก์สำหรับเครื่องอื่น";$("rdlg").showModal()};
+$("bDel").onclick=()=>{st.items.splice(edit,1);push();render();$("dlg").close();connectWS()};
+
+// ---- ตั้งค่า ----
+$("rateBtn").onclick=()=>{$("fRate").value=st.rate;$("fKey").value=st.key;$("fSec").value=st.sec;$("fCode").value=st.sc;$("fHold").checked=!!st.hold;$("copyLink").textContent="📋 คัดลอกลิงก์สำหรับเครื่องอื่น";$("rdlg").showModal()};
 $("rCancel").onclick=()=>$("rdlg").close();
 $("copyLink").onclick=async()=>{const u=location.origin+location.pathname+"#k="+encodeURIComponent(st.key)+"&s="+encodeURIComponent(st.sec)+"&c="+encodeURIComponent(st.sc);
   try{await navigator.clipboard.writeText(u);$("copyLink").textContent="✓ คัดลอกแล้ว"}catch(e){prompt("คัดลอกลิงก์นี้",u)}};
-$("rSave").onclick=()=>{const v=parseFloat($("fRate").value);if(v>0)st.rate=v;st.key=$("fKey").value.trim();st.sec=$("fSec").value.trim();const c=$("fCode").value.trim();if(c&&c!==st.sc){st.sc=c;st.ts=0}save();syncHash();render();$("rdlg").close();refresh();connectWS();pull()};
+$("rSave").onclick=()=>{
+  const v=parseFloat($("fRate").value);if(v>0)st.rate=v;
+  st.key=$("fKey").value.trim();st.sec=$("fSec").value.trim();
+  const c=$("fCode").value.trim();if(c&&c!==st.sc){st.sc=c;st.ts=0}
+  const hold=$("fHold").checked,hc=hold!==!!st.hold;st.hold=hold;
+  save();syncHash();render();$("rdlg").close();refresh();connectWS();loadHist();hc?push():pull();
+};
 
-// home-screen icon + manifest
+// ---- ไอคอน + manifest ----
 try{
   const c=document.createElement("canvas");c.width=c.height=180;const x=c.getContext("2d");
   x.fillStyle="#2962ff";x.fillRect(0,0,180,180);x.fillStyle="#fff";x.font="bold 84px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText("VD",90,94);
@@ -135,28 +213,41 @@ try{
   const m={name:"ViewDime",short_name:"ViewDime",display:"standalone",background_color:"#ffffff",theme_color:"#ffffff",start_url:".",icons:[{src:c.toDataURL("image/png"),sizes:"180x180",type:"image/png"}]};
   const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/json"}));document.head.appendChild(l);
 }catch(e){}
-render();
-// ---- live data (Alpaca) ----
-let rateT=0,ws,wsT,dirty=false,wsOk=false;
+
+// ---- ข้อมูลสด (Alpaca) ----
 const setStat=t=>{$("stat").textContent=t};
+const hdr=()=>({"APCA-API-KEY-ID":st.key,"APCA-API-SECRET-KEY":st.sec});
+const syms=()=>st.items.map(i=>i.s).join(",");
 async function refresh(){
   if(!st.key||!st.sec){setStat("ใส่ Alpaca Key ในตั้งค่า (แตะ ฿)");return}
   if(Date.now()-rateT>6e5){try{const r=await fetch("https://open.er-api.com/v6/latest/USD");const j=await r.json();if(j.rates&&j.rates.THB){st.rate=j.rates.THB;rateT=Date.now()}}catch(e){}}
+  if(!st.items.length)return;
   try{
-    const syms=st.items.map(i=>i.s).join(",");
-    const r=await fetch("https://data.alpaca.markets/v2/stocks/snapshots?feed=iex&symbols="+encodeURIComponent(syms),{headers:{"APCA-API-KEY-ID":st.key,"APCA-API-SECRET-KEY":st.sec}});
+    const r=await fetch("https://data.alpaca.markets/v2/stocks/snapshots?feed=iex&symbols="+encodeURIComponent(syms()),{headers:hdr()});
     const t=await r.text();
     if(!r.ok){setStat("⚠ Alpaca "+r.status+": "+t.slice(0,80));return}
     const j=JSON.parse(t);let ok=0;
     st.items.forEach(it=>{const q=j[it.s];if(!q)return;const p=q.latestTrade&&q.latestTrade.p;const pc=q.prevDailyBar&&q.prevDailyBar.c;if(p){ok++;it.p=p;if(pc){it.pc=pc;it.c=p-pc}}});
     if(!ok){setStat("⚠ ไม่พบราคาจาก Alpaca");return}
-    save();render();if(!wsOk)setStat("● อัปเดต "+new Date().toLocaleTimeString("th-TH"));
+    checkAlerts();save();render();if(!wsOk)setStat("● อัปเดต "+new Date().toLocaleTimeString("th-TH"));
+    if(Date.now()-histT>18e5)loadHist();
   }catch(e){setStat("⚠ ดึงราคา REST ไม่ได้ ("+e.message+") อาจถูกบล็อก CORS")}
+}
+async function loadHist(){
+  if(!st.key||!st.sec||!st.items.length)return;
+  histT=Date.now();
+  try{
+    const start=new Date(Date.now()-50*864e5).toISOString().slice(0,10);
+    const r=await fetch("https://data.alpaca.markets/v2/stocks/bars?timeframe=1Day&feed=iex&adjustment=split&limit=10000&start="+start+"&symbols="+encodeURIComponent(syms()),{headers:hdr()});
+    if(!r.ok)return;const j=await r.json();
+    for(const k in (j.bars||{}))hist[k]=j.bars[k].map(b=>b.c);
+    render();
+  }catch(e){}
 }
 function connectWS(){
   clearTimeout(wsT);wsOk=false;
   try{if(ws){ws.onclose=null;ws.close()}}catch(e){}
-  if(!st.key||!st.sec)return;
+  if(!st.key||!st.sec||!st.items.length)return;
   ws=new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
   ws.onopen=()=>ws.send(JSON.stringify({action:"auth",key:st.key,secret:st.sec}));
   ws.onmessage=e=>{let a;try{a=JSON.parse(e.data)}catch(x){return}
@@ -167,13 +258,15 @@ function connectWS(){
     })};
   ws.onclose=()=>{wsOk=false;wsT=setTimeout(connectWS,10000)};
 }
+
+// ---- ซิงก์ Firebase ----
 const DB="https://viewdime-default-rtdb.asia-southeast1.firebasedatabase.app";
 const lurl=()=>DB+"/lists/"+encodeURIComponent(st.sc)+".json";
 const sy=t=>{const e=$("sy");if(e)e.textContent=t+" · รหัสท้าย …"+st.sc.slice(-4)};
-const slim=()=>st.items.map(i=>({s:i.s,n:i.n||"",note:i.note||""}));
+const slim=()=>st.items.map(i=>{const o={s:i.s,n:i.n||"",note:i.note||""};if(st.hold){o.q=i.q||0;o.k=i.k||0;o.hi=i.hi||0;o.lo=i.lo||0}return o});
 async function push(){
   st.ts=Date.now();save();
-  try{const r=await fetch(lurl(),{method:"PUT",body:JSON.stringify({ts:st.ts,items:slim()})});
+  try{const r=await fetch(lurl(),{method:"PUT",body:JSON.stringify({ts:st.ts,hold:!!st.hold,items:slim()})});
     sy(r.ok?"☁ ซิงก์แล้ว "+new Date().toLocaleTimeString("th-TH"):"☁ ซิงก์ไม่สำเร็จ (HTTP "+r.status+")")}
   catch(e){sy("☁ ซิงก์ไม่สำเร็จ ("+e.message+")")}
 }
@@ -186,16 +279,15 @@ async function pull(){
     if(d===null){if(st.items.length)await push();return}
     if(d.ts>(st.ts||0)){
       const old={};st.items.forEach(i=>old[i.s]=i);
-      st.items=(d.items||[]).map(x=>Object.assign({p:0,c:0},old[x.s]||{},{s:x.s,n:x.n||"",note:x.note||""}));
-      st.ts=d.ts;save();render();connectWS();refresh();
+      st.hold=!!d.hold;
+      st.items=(d.items||[]).map(x=>Object.assign({p:0,c:0},old[x.s]||{},{s:x.s,n:x.n||"",note:x.note||""},d.hold?{q:x.q||0,k:x.k||0,hi:x.hi||0,lo:x.lo||0}:{}));
+      st.ts=d.ts;save();render();connectWS();refresh();loadHist();
     }
     sy("☁ ซิงก์แล้ว "+new Date().toLocaleTimeString("th-TH"));
   }catch(e){sy("☁ ซิงก์ไม่สำเร็จ ("+e.message+")")}
 }
-setInterval(()=>{if(!document.hidden)pull()},5000);
-pull();
-setInterval(()=>{if(dirty){dirty=false;render();save()}},500);
-setInterval(()=>{if(!document.hidden)refresh()},15000);
+
+// ---- อัปเดตตัวเอง ----
 const VER=(document.querySelector('meta[name="app-version"]')||{}).content;
 $("vn").textContent="v"+VER;
 async function checkUpdate(){
@@ -206,8 +298,14 @@ async function checkUpdate(){
   }catch(e){}
 }
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){refresh();pull();checkUpdate();if(!ws||ws.readyState>1)connectWS()}});
-setInterval(checkUpdate,300000);checkUpdate();
-refresh();connectWS();
+
+// ---- เริ่มทำงาน ----
+setInterval(()=>{if(dirty){dirty=false;checkAlerts();render();save()}},500);
+setInterval(()=>{if(!document.hidden)refresh()},15000);
+setInterval(()=>{if(!document.hidden)pull()},5000);
+setInterval(checkUpdate,300000);
+renderChips();renderBanner();render();
+refresh();connectWS();pull();checkUpdate();
 </script>
 </body>
 </html>
