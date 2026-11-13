@@ -2,11 +2,12 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<title>Watchlist ฿</title>
+<title>ViewDime</title>
+<meta name="app-version" content="4">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Watchlist ฿">
+<meta name="apple-mobile-web-app-title" content="ViewDime">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#ffffff">
 <link rel="apple-touch-icon" id="icon" href="">
@@ -38,10 +39,10 @@ input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);ba
 </style>
 </head>
 <body>
-<header><div><h1>📈 Watchlist (฿ บาท)</h1><div class="usd" id="stat">ยังไม่ได้ใส่ Alpaca Key</div></div><button class="rate" id="rateBtn"></button></header>
+<header><div><h1>📈 ViewDime</h1><div class="usd" id="stat">ยังไม่ได้ใส่ Alpaca Key</div></div><button class="rate" id="rateBtn"></button></header>
 <div id="list"></div>
 <button class="add" id="addBtn">＋ เพิ่มสัญลักษณ์</button>
-<p class="foot">ราคาหุ้นสหรัฐฯ จาก Alpaca (ฟีด IEX) real-time ผ่าน WebSocket (สำรองทุก 15 วินาที) · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ลบ · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>iPhone: Safari → แชร์ → เพิ่มลงในหน้าจอโฮม</p>
+<p class="foot">ราคาหุ้นสหรัฐฯ จาก Alpaca (ฟีด IEX) real-time ผ่าน WebSocket (สำรองทุก 15 วินาที) · เรต USD/THB จาก open.er-api.com<br>แตะแถวเพื่อแก้ไข/ลบ · แตะ ฿ ด้านบนเพื่อตั้งค่า<br>ใส่คีย์ใน Safari ก่อน แล้วค่อยเพิ่มลงหน้าจอโฮม แอปจะจำคีย์ให้เอง<br>iPhone: Safari → แชร์ → เพิ่มลงในหน้าจอโฮม</p>
 
 <dialog id="dlg">
   <div id="dTitle" style="font-weight:700;font-size:17px"></div>
@@ -75,6 +76,9 @@ try{st=JSON.parse(localStorage.getItem("wl")||"null")}catch(e){}
 if(!st||!st.items)st=JSON.parse(JSON.stringify(DEF));
 if(!("key" in st))st.key="";if(!("sec" in st))st.sec="";
 const save=()=>{try{localStorage.setItem("wl",JSON.stringify(st))}catch(e){}};
+// จำคีย์ไว้ในลิงก์ (#k=...&s=...) เพื่อให้แอปบนหน้าโฮมได้คีย์เดียวกับ Safari ไม่ต้องใส่ซ้ำ
+function syncHash(){try{history.replaceState(null,"",location.pathname+location.search+(st.key&&st.sec?"#k="+encodeURIComponent(st.key)+"&s="+encodeURIComponent(st.sec):""))}catch(e){}}
+(function(){const h=new URLSearchParams(location.hash.slice(1));if(h.get("k")&&h.get("s")){st.key=h.get("k");st.sec=h.get("s");save()}syncHash()})();
 const $=id=>document.getElementById(id);
 const f=(n,d=2)=>n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
 let edit=-1;
@@ -110,14 +114,14 @@ $("bSave").onclick=()=>{
 $("bDel").onclick=()=>{st.items.splice(edit,1);save();render();connectWS();$("dlg").close()};
 $("rateBtn").onclick=()=>{$("fRate").value=st.rate;$("fKey").value=st.key;$("fSec").value=st.sec;$("rdlg").showModal()};
 $("rCancel").onclick=()=>$("rdlg").close();
-$("rSave").onclick=()=>{const v=parseFloat($("fRate").value);if(v>0)st.rate=v;st.key=$("fKey").value.trim();st.sec=$("fSec").value.trim();save();render();$("rdlg").close();refresh();connectWS()};
+$("rSave").onclick=()=>{const v=parseFloat($("fRate").value);if(v>0)st.rate=v;st.key=$("fKey").value.trim();st.sec=$("fSec").value.trim();save();syncHash();render();$("rdlg").close();refresh();connectWS()};
 
 // home-screen icon + manifest
 try{
   const c=document.createElement("canvas");c.width=c.height=180;const x=c.getContext("2d");
-  x.fillStyle="#2962ff";x.fillRect(0,0,180,180);x.fillStyle="#fff";x.font="bold 110px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText("฿",90,98);
+  x.fillStyle="#2962ff";x.fillRect(0,0,180,180);x.fillStyle="#fff";x.font="bold 84px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText("VD",90,94);
   $("icon").href=c.toDataURL("image/png");
-  const m={name:"Watchlist ฿",short_name:"Watchlist ฿",display:"standalone",background_color:"#ffffff",theme_color:"#ffffff",start_url:".",icons:[{src:c.toDataURL("image/png"),sizes:"180x180",type:"image/png"}]};
+  const m={name:"ViewDime",short_name:"ViewDime",display:"standalone",background_color:"#ffffff",theme_color:"#ffffff",start_url:".",icons:[{src:c.toDataURL("image/png"),sizes:"180x180",type:"image/png"}]};
   const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/json"}));document.head.appendChild(l);
 }catch(e){}
 render();
@@ -154,7 +158,16 @@ function connectWS(){
 }
 setInterval(()=>{if(dirty){dirty=false;render();save()}},500);
 setInterval(()=>{if(!document.hidden)refresh()},15000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
+const VER=(document.querySelector('meta[name="app-version"]')||{}).content;
+async function checkUpdate(){
+  try{
+    const r=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"});
+    const m=(await r.text()).match(/name="app-version" content="([^"]+)"/);
+    if(m&&VER&&m[1]!==VER)location.replace(location.pathname+"?v="+m[1]+location.hash);
+  }catch(e){}
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){refresh();checkUpdate();if(!ws||ws.readyState>1)connectWS()}});
+setInterval(checkUpdate,300000);checkUpdate();
 refresh();connectWS();
 </script>
 </body>
